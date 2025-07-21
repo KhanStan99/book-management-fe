@@ -1,60 +1,54 @@
-import React, { useState, useEffect } from 'react';
+// src/App.tsx
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import BooksPage from './pages/BooksPage';
-import LoginPage from './pages/LoginPage';
-import { authApi } from './services/api';
-import './App.css';
+import Header from './components/Header';
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import PrivateRoute from './components/PrivateRoute';
+import PublicRoute from './components/PublicRoute';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      authApi.setAuthToken(token);
-      setIsAuthenticated(true);
-      // Optionally fetch user data
-    }
-    setLoading(false);
-  }, []);
-
-  const handleLogin = (token: string, userData: any) => {
-    localStorage.setItem('token', token);
-    setIsAuthenticated(true);
-    setUser(userData);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    authApi.removeAuthToken();
-    setIsAuthenticated(false);
-    setUser(null);
-  };
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
+const App: React.FC = () => {
   return (
     <Router>
-      <Layout onLogout={handleLogout} user={user}>
-        <Routes>
-          <Route path="/" element={<div>Dashboard - Coming Soon</div>} />
-          <Route path="/books" element={<BooksPage />} />
-          <Route path="/users" element={<div>Users - Coming Soon</div>} />
-          <Route path="/rentals" element={<div>Rentals - Coming Soon</div>} />
-        </Routes>
-      </Layout>
+      <Header />
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <SignUp />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <Home />
+            </PublicRoute>
+          }
+        />
+      </Routes>
     </Router>
   );
-}
+};
 
 export default App;

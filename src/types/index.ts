@@ -1,12 +1,13 @@
 // User Types
 export interface User {
-  id: number;
+  id?: number;
   name: string;
+  password: string;
   email: string;
   age?: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserCreate {

@@ -12,17 +12,12 @@ const api = axios.create({
 
 // User API
 export const userApi = {
-  getUsers: async (skip = 0, limit = 100): Promise<User[]> => {
-    const response = await api.get(`/users/?skip=${skip}&limit=${limit}`);
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    const response = await api.post('/login', credentials);
     return response.data;
   },
 
-  getUser: async (id: number): Promise<User> => {
-    const response = await api.get(`/users/${id}`);
-    return response.data;
-  },
-
-  createUser: async (user: UserCreate): Promise<User> => {
+  signUp: async (user: UserCreate): Promise<User> => {
     const response = await api.post('/users/', user);
     return response.data;
   },
