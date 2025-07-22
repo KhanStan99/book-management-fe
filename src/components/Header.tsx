@@ -17,7 +17,7 @@ const Header: React.FC = () => {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-           <Link to={user.user ? '/dashboard' : '/'}>
+          <Link to={user.user ? '/dashboard' : '/'}>
             <AiOutlineBook /> BookVerse
           </Link>
         </Typography>
