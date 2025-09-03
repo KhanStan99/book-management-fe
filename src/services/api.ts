@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { User, UserCreate, UserUpdate, Book, BookCreate, BookUpdate, Rental, RentalCreate, LoginRequest, LoginResponse } from '../types';
+import type { RefreshResponse } from '../types/auth';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -9,6 +10,92 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Helper to get tokens from localStorage
+function getTokens() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return {
+    access_token: user?.access_token,
+    refresh_token: user?.refresh_token,
+  };
+}
+
+// Set up axios interceptor for token refresh
+let isRefreshing = false;
+type FailedQueueItem = {
+  resolve: (token: string | null) => void;
+  reject: (error: unknown) => void;
+};
+let failedQueue: FailedQueueItem[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+api.interceptors.request.use(
+  (config) => {
+    const { access_token } = getTokens();
+    if (access_token) {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${access_token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+      const { refresh_token } = getTokens();
+      if (!refresh_token) {
+        isRefreshing = false;
+        return Promise.reject(error);
+      }
+      try {
+        const response = await axios.post(`${API_BASE_URL}/refresh`, { refresh_token });
+        const { access_token } = response.data as RefreshResponse;
+        // Update localStorage
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        user.access_token = access_token;
+        localStorage.setItem('user', JSON.stringify(user));
+        processQueue(null, access_token);
+        isRefreshing = false;
+        originalRequest.headers['Authorization'] = 'Bearer ' + access_token;
+        return api(originalRequest);
+      } catch (err) {
+        processQueue(err, null);
+        isRefreshing = false;
+        // Optionally, remove user from localStorage
+        localStorage.removeItem('user');
+        return Promise.reject(err);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // User API
 export const userApi = {
@@ -104,12 +191,10 @@ export const authApi = {
     return response.data;
   },
 
-  setAuthToken: (token: string) => {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  },
-
-  removeAuthToken: () => {
-    delete api.defaults.headers.common['Authorization'];
+  // Optionally, expose refresh manually
+  refresh: async (refresh_token: string): Promise<RefreshResponse> => {
+    const response = await axios.post(`${API_BASE_URL}/refresh`, { refresh_token });
+    return response.data;
   },
 };
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { bookApi } from '../services/api';
 import type { Book } from '../types';
+import Layout from '../components/Layout';
 
 const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -27,40 +28,42 @@ const BooksPage: React.FC = () => {
     fetchBooks();
   }, []);
 
-  const getAvailabilityColor = (available: number, total: number) => {
-    const percentage = (available / total) * 100;
-    if (percentage > 50) return 'from-emerald-400 to-emerald-600 text-white';
-    if (percentage > 20) return 'from-amber-400 to-amber-600 text-white';
-    return 'from-red-400 to-red-600 text-white';
-  };
+  // No color helpers needed, fallback to plain style or MUI
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      'Fiction': 'from-blue-400 to-blue-600 text-white',
-      'Science Fiction': 'from-purple-400 to-purple-600 text-white',
-      'Fantasy': 'from-pink-400 to-pink-600 text-white',
-      'Romance': 'from-rose-400 to-rose-600 text-white',
-      'Mystery': 'from-gray-400 to-gray-600 text-white',
-      'Non-fiction': 'from-green-400 to-green-600 text-white',
-    };
-    return colors[category] || 'from-gray-400 to-gray-600 text-white';
-  };
-
-  const filteredBooks = books.filter(book => {
-    const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         book.author.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === '' || book.category === selectedCategory;
+  const filteredBooks = books.filter((book) => {
+    const matchesSearch =
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === '' || book.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = [...new Set(books.map(book => book.category).filter(Boolean))];
+  const categories = [
+    ...new Set(books.map((book) => book.category).filter(Boolean)),
+  ];
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200"></div>
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-500 border-t-transparent absolute top-0 left-0"></div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '80px 0',
+        }}
+      >
+        <div style={{ position: 'relative' }}>
+          <div
+            style={{
+              borderRadius: '50%',
+              height: 64,
+              width: 64,
+              border: '4px solid #b3b3ff',
+              borderTop: '4px solid #4b2995',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
         </div>
       </div>
     );
@@ -68,14 +71,33 @@ const BooksPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-center py-20">
-        <div className="animate-fadeInUp">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h3>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div style={{ textAlign: 'center', padding: '80px 0' }}>
+        <div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <h3
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              color: '#222',
+              marginBottom: 8,
+            }}
+          >
+            Something went wrong
+          </h3>
+          <p style={{ color: '#888', marginBottom: 24 }}>{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+            style={{
+              padding: '12px 24px',
+              background: 'linear-gradient(90deg,#7b2ff2,#f357a8)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              fontWeight: 500,
+              fontSize: 16,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}
           >
             Try Again
           </button>
@@ -85,43 +107,96 @@ const BooksPage: React.FC = () => {
   }
 
   return (
-    <div className="animate-fadeInUp">
-      {/* Beautiful Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+    <Layout>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <h1
+          style={{
+            fontSize: 40,
+            fontWeight: 700,
+            color: '#4b2995',
+            marginBottom: 16,
+          }}
+        >
           📚 Discover Amazing Books
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Explore our curated collection of {books.length} incredible books waiting to be discovered
+        <p
+          style={{
+            fontSize: 20,
+            color: '#888',
+            maxWidth: 600,
+            margin: '0 auto',
+          }}
+        >
+          Explore our curated collection of {books.length} incredible books
+          waiting to be discovered
         </p>
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-8 glass rounded-2xl p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500">🔍</span>
-              </div>
+      <div
+        style={{
+          marginBottom: 32,
+          background: '#fff',
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 16,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{ position: 'relative' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: 16,
+                  color: '#aaa',
+                  pointerEvents: 'none',
+                }}
+              >
+                🔍
+              </span>
               <input
                 type="text"
                 placeholder="Search books or authors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px 12px 36px',
+                  border: '1px solid #eee',
+                  borderRadius: 12,
+                  fontSize: 16,
+                  outline: 'none',
+                  marginBottom: 0,
+                }}
               />
             </div>
           </div>
-          <div className="sm:w-64">
+          <div style={{ minWidth: 200 }}>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '1px solid #eee',
+                borderRadius: 12,
+                fontSize: 16,
+              }}
             >
               <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
               ))}
             </select>
           </div>
@@ -129,80 +204,201 @@ const BooksPage: React.FC = () => {
       </div>
 
       {/* Books Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {filteredBooks.map((book, index) => (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: 32,
+        }}
+      >
+        {filteredBooks.map((book) => (
           <div
             key={book.id}
-            className="group relative bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden hover:-translate-y-2 animate-fadeInUp"
-            style={{ animationDelay: `${index * 0.1}s` }}
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              overflow: 'hidden',
+              marginBottom: 0,
+              position: 'relative',
+              minHeight: 320,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
           >
-            {/* Gradient Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 opacity-50"></div>
-            
             {/* Book Cover Simulation */}
-            <div className="relative h-48 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center">
-              <div className="text-white text-center p-4">
-                <div className="text-4xl mb-2">📖</div>
-                <h3 className="font-bold text-lg line-clamp-2">{book.title}</h3>
+            <div
+              style={{
+                height: 192,
+                background: 'linear-gradient(90deg,#7b2ff2,#f357a8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ color: '#fff', textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>📖</div>
+                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0 }}>
+                  {book.title}
+                </h3>
               </div>
-              
               {/* Price Tag */}
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-bold text-gray-900 shadow-lg">
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: '#fff',
+                  borderRadius: 16,
+                  padding: '4px 12px',
+                  fontWeight: 700,
+                  color: '#222',
+                  fontSize: 14,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                }}
+              >
                 ${book.price}
               </div>
-              
               {/* Availability Badge */}
-              <div className={`absolute top-4 left-4 px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r ${getAvailabilityColor(book.available_copies, book.total_copies)} shadow-lg`}>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  left: 16,
+                  background: '#7b2ff2',
+                  color: '#fff',
+                  borderRadius: 16,
+                  padding: '4px 12px',
+                  fontWeight: 500,
+                  fontSize: 12,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                }}
+              >
                 {book.available_copies}/{book.total_copies}
               </div>
             </div>
 
             {/* Book Details */}
-            <div className="relative p-6">
+            <div
+              style={{
+                padding: 24,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
               {/* Author */}
-              <p className="text-gray-600 text-sm mb-2 font-medium">by {book.author}</p>
-              
+              <p
+                style={{
+                  color: '#888',
+                  fontSize: 14,
+                  marginBottom: 8,
+                  fontWeight: 500,
+                }}
+              >
+                by {book.author}
+              </p>
               {/* Category and Year */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className={`px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r ${getCategoryColor(book.category || '')} shadow-sm`}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  marginBottom: 16,
+                }}
+              >
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    borderRadius: 16,
+                    background: '#eee',
+                    color: '#4b2995',
+                  }}
+                >
                   {book.category}
                 </span>
                 {book.publication_year && (
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                  <span
+                    style={{
+                      padding: '4px 12px',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      borderRadius: 16,
+                      background: '#f5f6fa',
+                      color: '#888',
+                    }}
+                  >
                     {book.publication_year}
                   </span>
                 )}
               </div>
-
               {/* Description */}
               {book.description && (
-                <p className="text-gray-700 text-sm mb-4 line-clamp-3 leading-relaxed">
+                <p
+                  style={{
+                    color: '#444',
+                    fontSize: 14,
+                    marginBottom: 16,
+                    lineHeight: 1.5,
+                  }}
+                >
                   {book.description}
                 </p>
               )}
-              
               {/* ISBN */}
-              <div className="text-xs text-gray-500 mb-4 font-mono">
+              <div
+                style={{
+                  fontSize: 12,
+                  color: '#aaa',
+                  marginBottom: 16,
+                  fontFamily: 'monospace',
+                }}
+              >
                 ISBN: {book.isbn}
               </div>
-
               {/* Rent Button */}
               <button
                 disabled={book.available_copies === 0}
-                className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 ${
-                  book.available_copies > 0
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '12px 0',
+                  borderRadius: 12,
+                  fontWeight: 500,
+                  fontSize: 16,
+                  background:
+                    book.available_copies > 0
+                      ? 'linear-gradient(90deg,#7b2ff2,#f357a8)'
+                      : '#eee',
+                  color: book.available_copies > 0 ? '#fff' : '#aaa',
+                  border: 'none',
+                  cursor: book.available_copies > 0 ? 'pointer' : 'not-allowed',
+                  marginTop: 8,
+                }}
               >
                 {book.available_copies > 0 ? (
-                  <span className="flex items-center justify-center">
-                    <span className="mr-2">📚</span>
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span style={{ marginRight: 8 }}>📚</span>
                     Rent This Book
                   </span>
                 ) : (
-                  <span className="flex items-center justify-center">
-                    <span className="mr-2">❌</span>
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span style={{ marginRight: 8 }}>❌</span>
                     Out of Stock
                   </span>
                 )}
@@ -214,14 +410,30 @@ const BooksPage: React.FC = () => {
 
       {/* Empty State */}
       {filteredBooks.length === 0 && !loading && (
-        <div className="text-center py-20 animate-fadeInUp">
-          <div className="text-8xl mb-6 animate-float">📚</div>
-          <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-            {searchTerm || selectedCategory ? 'No books match your search' : 'No books available'}
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
+          <div style={{ fontSize: 80, marginBottom: 24 }}>📚</div>
+          <h3
+            style={{
+              fontSize: 24,
+              fontWeight: 600,
+              color: '#222',
+              marginBottom: 16,
+            }}
+          >
+            {searchTerm || selectedCategory
+              ? 'No books match your search'
+              : 'No books available'}
           </h3>
-          <p className="text-gray-600 text-lg max-w-md mx-auto">
-            {searchTerm || selectedCategory 
-              ? 'Try adjusting your search terms or browse all categories' 
+          <p
+            style={{
+              color: '#888',
+              fontSize: 18,
+              maxWidth: 400,
+              margin: '0 auto',
+            }}
+          >
+            {searchTerm || selectedCategory
+              ? 'Try adjusting your search terms or browse all categories'
               : 'Check back later for new additions to our library'}
           </p>
           {(searchTerm || selectedCategory) && (
@@ -230,16 +442,26 @@ const BooksPage: React.FC = () => {
                 setSearchTerm('');
                 setSelectedCategory('');
               }}
-              className="mt-6 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              style={{
+                marginTop: 24,
+                padding: '12px 24px',
+                background: 'linear-gradient(90deg,#7b2ff2,#f357a8)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 12,
+                fontWeight: 500,
+                fontSize: 16,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              }}
             >
               Clear Filters
             </button>
           )}
         </div>
       )}
-    </div>
+    </Layout>
   );
 };
 
 export default BooksPage;
-

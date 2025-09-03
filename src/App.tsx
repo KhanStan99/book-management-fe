@@ -1,17 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 import PublicRoute from './components/PublicRoute';
+import BooksPage from './pages/BooksPage';
+import Dashboard from './pages/Dashboard';
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Header />
       <Routes>
         <Route
           path="/login"
@@ -34,6 +33,14 @@ const App: React.FC = () => {
           element={
             <PrivateRoute>
               <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/books"
+          element={
+            <PrivateRoute>
+              <BooksPage />
             </PrivateRoute>
           }
         />
