@@ -1,34 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { bookApi } from '../services/api';
-import type { Book } from '../types';
+import React from 'react';
+import { useGetBooksQuery } from '../services/api';
 import Layout from '../components/Layout';
 
 const BooksPage: React.FC = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        setLoading(true);
-        const data = await bookApi.getBooks();
-        setBooks(data);
-        setError('');
-      } catch (error) {
-        console.error('Error fetching books:', error);
-        setError('Failed to fetch books. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBooks();
-  }, []);
-
-  // No color helpers needed, fallback to plain style or MUI
+  const { data: books = [], isLoading, error } = useGetBooksQuery({});
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState('');
 
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
@@ -43,7 +20,7 @@ const BooksPage: React.FC = () => {
     ...new Set(books.map((book) => book.category).filter(Boolean)),
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div
         style={{
@@ -84,7 +61,9 @@ const BooksPage: React.FC = () => {
           >
             Something went wrong
           </h3>
-          <p style={{ color: '#888', marginBottom: 24 }}>{error}</p>
+          <p style={{ color: '#888', marginBottom: 24 }}>
+            Failed to fetch books. Please try again.
+          </p>
           <button
             onClick={() => window.location.reload()}
             style={{
@@ -409,7 +388,7 @@ const BooksPage: React.FC = () => {
       </div>
 
       {/* Empty State */}
-      {filteredBooks.length === 0 && !loading && (
+      {filteredBooks.length === 0 && !isLoading && (
         <div style={{ textAlign: 'center', padding: '80px 0' }}>
           <div style={{ fontSize: 80, marginBottom: 24 }}>📚</div>
           <h3

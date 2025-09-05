@@ -10,8 +10,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { userApi } from '../services/api';
-import type { User } from '../types';
+import { useSignUpMutation } from '../services/api';
+import type { UserCreate } from '../types';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 
 const SignUp: React.FC = () => {
@@ -22,6 +22,7 @@ const SignUp: React.FC = () => {
   const [age, setAge] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [signUp, { isLoading }] = useSignUpMutation();
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
@@ -44,17 +45,18 @@ const SignUp: React.FC = () => {
       return;
     }
     try {
-      const user: User = {
+      const user: UserCreate = {
         name,
         email,
         password,
         age: age || 0,
       };
-      const response = await userApi.signUp(user);
+      const response = await signUp(user).unwrap();
       console.log('User created:', response);
       // You can redirect the user to the login page or dashboard here
-    } catch (error) {
-      setError(error.message);
+      setError(null);
+    } catch (err: unknown) {
+      setError(err?.data?.message || 'Sign up failed');
     }
   };
 
@@ -168,14 +170,14 @@ const SignUp: React.FC = () => {
             <TextField
               label="Age"
               type="number"
-              value={age}
+              value={age ?? ''}
               onChange={(e) =>
                 setAge((e.target as HTMLInputElement).valueAsNumber)
               }
               fullWidth
             />
-            <Button variant="contained" type="submit">
-              Sign Up
+            <Button variant="contained" type="submit" disabled={isLoading}>
+              {isLoading ? 'Signing up...' : 'Sign Up'}
             </Button>
             <Typography variant="body1" marginTop={2}>
               Already have an account? <a href="/login">Login</a>

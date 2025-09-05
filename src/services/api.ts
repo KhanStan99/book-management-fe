@@ -1,209 +1,138 @@
-import axios from 'axios';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { User, UserCreate, UserUpdate, Book, BookCreate, BookUpdate, Rental, RentalCreate, LoginRequest, LoginResponse } from '../types';
 import type { RefreshResponse } from '../types/auth';
 
 const API_BASE_URL = 'http://localhost:8000';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+export const api = createApi({
+  reducerPath: 'api',
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_BASE_URL,
+    prepareHeaders: (headers) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user?.access_token) {
+        headers.set('Authorization', `Bearer ${user.access_token}`);
+      }
+      return headers;
+    },
+  }),
+  endpoints: (builder) => ({
+    // User endpoints
+    login: builder.mutation<LoginResponse, LoginRequest>({
+      query: (credentials) => ({
+        url: '/login',
+        method: 'POST',
+        body: credentials,
+      }),
+    }),
+    signUp: builder.mutation<User, UserCreate>({
+      query: (user) => ({
+        url: '/users/',
+        method: 'POST',
+        body: user,
+      }),
+    }),
+    updateUser: builder.mutation<User, { id: number; user: UserUpdate }>({
+      query: ({ id, user }) => ({
+        url: `/users/${id}`,
+        method: 'PUT',
+        body: user,
+      }),
+    }),
+    deleteUser: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/users/${id}`,
+        method: 'DELETE',
+      }),
+    }),
+    // Book endpoints
+    getBooks: builder.query<Book[], { skip?: number; limit?: number }>({
+      query: ({ skip = 0, limit = 100 } = {}) => `/books/?skip=${skip}&limit=${limit}`,
+    }),
+    getBook: builder.query<Book, number>({
+      query: (id) => `/books/${id}`,
+    }),
+    createBook: builder.mutation<Book, BookCreate>({
+      query: (book) => ({
+        url: '/books/',
+        method: 'POST',
+        body: book,
+      }),
+    }),
+    updateBook: builder.mutation<Book, { id: number; book: BookUpdate }>({
+      query: ({ id, book }) => ({
+        url: `/books/${id}`,
+        method: 'PUT',
+        body: book,
+      }),
+    }),
+    deleteBook: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/books/${id}`,
+        method: 'DELETE',
+      }),
+    }),
+    // Rental endpoints
+    getRentals: builder.query<Rental[], { skip?: number; limit?: number }>({
+      query: ({ skip = 0, limit = 100 } = {}) => `/rentals/?skip=${skip}&limit=${limit}`,
+    }),
+    getRental: builder.query<Rental, number>({
+      query: (id) => `/rentals/${id}`,
+    }),
+    getUserRentals: builder.query<Rental[], { userId: number; skip?: number; limit?: number }>({
+      query: ({ userId, skip = 0, limit = 100 }) => `/users/${userId}/rentals?skip=${skip}&limit=${limit}`,
+    }),
+    createRental: builder.mutation<Rental, RentalCreate>({
+      query: (rental) => ({
+        url: '/rentals/',
+        method: 'POST',
+        body: rental,
+      }),
+    }),
+    returnBook: builder.mutation<Rental, number>({
+      query: (rentalId) => ({
+        url: `/rentals/${rentalId}/return`,
+        method: 'PUT',
+      }),
+    }),
+    getOverdueRentals: builder.query<Rental[], void>({
+      query: () => '/rentals/overdue',
+    }),
+    // Auth endpoints
+    getCurrentUser: builder.query<User, void>({
+      query: () => '/me',
+    }),
+    refresh: builder.mutation<RefreshResponse, string>({
+      query: (refresh_token) => ({
+        url: '/refresh',
+        method: 'POST',
+        body: { refresh_token },
+      }),
+    }),
+    // Health check
+    healthCheck: builder.query<{ message: string }, void>({
+      query: () => '/',
+    }),
+  }),
 });
 
-// Helper to get tokens from localStorage
-function getTokens() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  return {
-    access_token: user?.access_token,
-    refresh_token: user?.refresh_token,
-  };
-}
-
-// Set up axios interceptor for token refresh
-let isRefreshing = false;
-type FailedQueueItem = {
-  resolve: (token: string | null) => void;
-  reject: (error: unknown) => void;
-};
-let failedQueue: FailedQueueItem[] = [];
-
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
-api.interceptors.request.use(
-  (config) => {
-    const { access_token } = getTokens();
-    if (access_token) {
-      config.headers = config.headers || {};
-      config.headers['Authorization'] = `Bearer ${access_token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers['Authorization'] = 'Bearer ' + token;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-      const { refresh_token } = getTokens();
-      if (!refresh_token) {
-        isRefreshing = false;
-        return Promise.reject(error);
-      }
-      try {
-        const response = await axios.post(`${API_BASE_URL}/refresh`, { refresh_token });
-        const { access_token } = response.data as RefreshResponse;
-        // Update localStorage
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        user.access_token = access_token;
-        localStorage.setItem('user', JSON.stringify(user));
-        processQueue(null, access_token);
-        isRefreshing = false;
-        originalRequest.headers['Authorization'] = 'Bearer ' + access_token;
-        return api(originalRequest);
-      } catch (err) {
-        processQueue(err, null);
-        isRefreshing = false;
-        // Optionally, remove user from localStorage
-        localStorage.removeItem('user');
-        return Promise.reject(err);
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-// User API
-export const userApi = {
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await api.post('/login', credentials);
-    return response.data;
-  },
-
-  signUp: async (user: UserCreate): Promise<User> => {
-    const response = await api.post('/users/', user);
-    return response.data;
-  },
-
-  updateUser: async (id: number, user: UserUpdate): Promise<User> => {
-    const response = await api.put(`/users/${id}`, user);
-    return response.data;
-  },
-
-  deleteUser: async (id: number): Promise<void> => {
-    await api.delete(`/users/${id}`);
-  },
-};
-
-// Book API
-export const bookApi = {
-  getBooks: async (skip = 0, limit = 100): Promise<Book[]> => {
-    const response = await api.get(`/books/?skip=${skip}&limit=${limit}`);
-    return response.data;
-  },
-
-  getBook: async (id: number): Promise<Book> => {
-    const response = await api.get(`/books/${id}`);
-    return response.data;
-  },
-
-  createBook: async (book: BookCreate): Promise<Book> => {
-    const response = await api.post('/books/', book);
-    return response.data;
-  },
-
-  updateBook: async (id: number, book: BookUpdate): Promise<Book> => {
-    const response = await api.put(`/books/${id}`, book);
-    return response.data;
-  },
-
-  deleteBook: async (id: number): Promise<void> => {
-    await api.delete(`/books/${id}`);
-  },
-};
-
-// Rental API
-export const rentalApi = {
-  getRentals: async (skip = 0, limit = 100): Promise<Rental[]> => {
-    const response = await api.get(`/rentals/?skip=${skip}&limit=${limit}`);
-    return response.data;
-  },
-
-  getRental: async (id: number): Promise<Rental> => {
-    const response = await api.get(`/rentals/${id}`);
-    return response.data;
-  },
-
-  getUserRentals: async (userId: number, skip = 0, limit = 100): Promise<Rental[]> => {
-    const response = await api.get(`/users/${userId}/rentals?skip=${skip}&limit=${limit}`);
-    return response.data;
-  },
-
-  createRental: async (rental: RentalCreate): Promise<Rental> => {
-    const response = await api.post('/rentals/', rental);
-    return response.data;
-  },
-
-  returnBook: async (rentalId: number): Promise<Rental> => {
-    const response = await api.put(`/rentals/${rentalId}/return`);
-    return response.data;
-  },
-
-  getOverdueRentals: async (): Promise<Rental[]> => {
-    const response = await api.get('/rentals/overdue');
-    return response.data;
-  },
-};
-
-// Authentication API
-export const authApi = {
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await api.post('/login', credentials);
-    return response.data;
-  },
-
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get('/me');
-    return response.data;
-  },
-
-  // Optionally, expose refresh manually
-  refresh: async (refresh_token: string): Promise<RefreshResponse> => {
-    const response = await axios.post(`${API_BASE_URL}/refresh`, { refresh_token });
-    return response.data;
-  },
-};
-
-// Health check
-export const healthApi = {
-  check: async (): Promise<{ message: string }> => {
-    const response = await api.get('/');
-    return response.data;
-  },
-};
-
-export default api;
+export const {
+  useLoginMutation,
+  useSignUpMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useGetBooksQuery,
+  useGetBookQuery,
+  useCreateBookMutation,
+  useUpdateBookMutation,
+  useDeleteBookMutation,
+  useGetRentalsQuery,
+  useGetRentalQuery,
+  useGetUserRentalsQuery,
+  useCreateRentalMutation,
+  useReturnBookMutation,
+  useGetOverdueRentalsQuery,
+  useGetCurrentUserQuery,
+  useRefreshMutation,
+  useHealthCheckQuery,
+} = api;
