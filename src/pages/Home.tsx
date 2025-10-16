@@ -80,6 +80,16 @@ const Home: React.FC = () => {
           >
             Sign Up
           </Button>
+          <Button
+            component={Link}
+            to="/signup"
+            variant="contained"
+            color="secondary"
+            fullWidth
+            startIcon={<RiUserAddLine size={24} color="#fff" />}
+          >
+            Sign Up Duplicate
+          </Button>
         </Grid>
       </Grid>
     </Box>

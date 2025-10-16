@@ -20,6 +20,9 @@ const Dashboard: React.FC = () => {
           <Typography variant="h4" marginBottom={2}>
             Dashboard
           </Typography>
+          <Typography variant="h4" marginBottom={2}>
+            Bigger Dashboard
+          </Typography>
           <Typography variant="body1">Welcome, {user.user.name}!</Typography>
           <Typography variant="body1">Email: {user.user.email}</Typography>
         </Box>
