@@ -6,16 +6,24 @@ const API_BASE_URL = 'http://localhost:8000';
 
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders: (headers) => {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user?.access_token) {
-        headers.set('Authorization', `Bearer ${user.access_token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: async (args, api, extraOptions) => {
+    const rawBaseQuery = fetchBaseQuery({
+      baseUrl: API_BASE_URL,
+      prepareHeaders: (headers) => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user?.access_token) {
+          headers.set('Authorization', `Bearer ${user.access_token}`);
+        }
+        return headers;
+      },
+    });
+    const result = await rawBaseQuery(args, api, extraOptions);
+    if (result?.error?.status === 401) {
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return result;
+  },
   endpoints: (builder) => ({
     // User endpoints
     login: builder.mutation<LoginResponse, LoginRequest>({

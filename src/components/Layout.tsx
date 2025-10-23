@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
@@ -7,12 +7,6 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const location = useLocation();
-
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -24,15 +18,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     to,
     children,
     icon,
+    style,
   }: {
     to: string;
     children: React.ReactNode;
     icon: string;
+    style?: React.CSSProperties;
   }) => (
-    <Link to={to} className={isActive(to) ? 'active-link' : 'inactive-link'}>
+    <Link to={to} style={{ ...style, textDecoration: 'none' }}>
       <span style={{ marginRight: 8, fontSize: 18 }}>{icon}</span>
       {children}
-      {/* No background effect for active link */}
     </Link>
   );
 
@@ -63,7 +58,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             }}
           >
             {/* Logo */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <NavLink
+              to="/dashboard"
+              icon="📚"
+              style={{ display: 'flex', alignItems: 'center' }}
+            >
               <div style={{ flexShrink: 0 }}>
                 <h1
                   style={{
@@ -73,29 +72,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     margin: 0,
                   }}
                 >
-                  📚 BookVerse
+                  BookVerse
                 </h1>
                 <p style={{ fontSize: 12, color: '#888', marginTop: 0 }}>
                   Rental Management
                 </p>
               </div>
-            </div>
+            </NavLink>
 
             {user && (
               <>
                 {/* Navigation Links */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <NavLink to="/dashboard" icon="🏠">
-                    Dashboard
-                  </NavLink>
                   <NavLink to="/books" icon="📖">
                     Books
-                  </NavLink>
-                  <NavLink to="/users" icon="👥">
-                    Users
-                  </NavLink>
-                  <NavLink to="/rentals" icon="📋">
-                    Rentals
                   </NavLink>
                 </div>
               </>

@@ -210,7 +210,7 @@ const BooksPage: React.FC = () => {
             <div
               style={{
                 height: 192,
-                background: 'linear-gradient(90deg,#7b2ff2,#f357a8)',
+                background: 'violet',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -350,7 +350,7 @@ const BooksPage: React.FC = () => {
                   fontSize: 16,
                   background:
                     book.available_copies > 0
-                      ? 'linear-gradient(90deg,#7b2ff2,#f357a8)'
+                      ? '#8c03abff'
                       : '#eee',
                   color: book.available_copies > 0 ? '#fff' : '#aaa',
                   border: 'none',
